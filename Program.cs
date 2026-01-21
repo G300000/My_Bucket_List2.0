@@ -1,5 +1,6 @@
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddDbContext<Bucket_list_mvc.Models.AppDbContext>(options =>
+options.UseSqlite("Data Source=bucketlist.db"));
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
@@ -27,3 +28,4 @@ app.MapControllerRoute(
 
 
 app.Run();
+
