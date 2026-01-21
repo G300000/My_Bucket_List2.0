@@ -1,15 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
 using Bucket_list_mvc.Models;
+using System.Linq;
 
 namespace Bucket_list_mvc.Controllers
 {
     public class HomeController : Controller
     {
-        private static List<BucketItem> _items = new List<BucketItem>();
+        // We replace the 'static List' with the Database Context
+        private readonly AppDbContext _context;
+
+        // This "Constructor" tells the app to use the SQLite database
+        public HomeController(AppDbContext context)
+        {
+            _context = context;
+        }
 
         public IActionResult Index()
         {
-            return View(_items.OrderByDescending(x => x.DateCreated).ToList());
+            // Fetch items from the SQLite database file (.db)
+            var items = _context.BucketItems.OrderByDescending(x => x.DateCreated).ToList();
+            return View(items);
         }
 
         [HttpPost]
@@ -17,7 +27,13 @@ namespace Bucket_list_mvc.Controllers
         {
             if (!string.IsNullOrWhiteSpace(ActivityName))
             {
-                _items.Add(new BucketItem { Id = _items.Count + 1, ActivityName = ActivityName });
+                // Add the new item to the database table
+                _context.BucketItems.Add(new BucketItem 
+                { 
+                    ActivityName = ActivityName,
+                    DateCreated = DateTime.Now 
+                });
+                _context.SaveChanges(); // This saves it to the .db file
             }
             return RedirectToAction("Index");
         }
@@ -25,15 +41,24 @@ namespace Bucket_list_mvc.Controllers
         [HttpPost]
         public IActionResult ToggleComplete(int id)
         {
-            var item = _items.FirstOrDefault(x => x.Id == id);
-            if (item != null) item.IsCompleted = !item.IsCompleted;
+            var item = _context.BucketItems.Find(id);
+            if (item != null) 
+            {
+                item.IsCompleted = !item.IsCompleted;
+                _context.SaveChanges();
+            }
             return RedirectToAction("Index");
         }
 
         [HttpPost]
         public IActionResult Delete(int id)
         {
-            _items.RemoveAll(x => x.Id == id);
+            var item = _context.BucketItems.Find(id);
+            if (item != null) 
+            {
+                _context.BucketItems.Remove(item);
+                _context.SaveChanges();
+            }
             return RedirectToAction("Index");
         }
     }
