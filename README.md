@@ -1,4 +1,4 @@
-# 🪣 Bucket.io - Modern MVC Dashboard
+# 🪣 My_Bucket_List - Modern MVC Dashboard
 
 A professional, laptop-optimized **Bucket List** application built using **ASP.NET Core MVC**. This project follows a strict MVC (Model-View-Controller) architecture and features a high-end UI/UX using a White, Navy Blue, and Emerald Green color palette.
 
