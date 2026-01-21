@@ -1,0 +1,156 @@
+﻿@model IEnumerable<Bucket_list_mvc.Models.BucketItem>
+
+<style>
+    :root {
+        --primary-blue: #1e3a8a; /* Deep Navy Blue */
+        --accent-green: #10b981; /* Emerald Green */
+        --bg-white: #ffffff;
+        --sidebar-bg: #f8fafc;
+        --text-main: #1e293b;
+    }
+
+    body { background-color: var(--bg-white); font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text-main); margin: 0; }
+
+    /* Layout */
+    .app-wrapper { display: flex; min-height: 100vh; }
+
+    /* Sidebar UX */
+    .sidebar {
+        width: 320px;
+        background: var(--sidebar-bg);
+        border-right: 1px solid #e2e8f0;
+        padding: 40px 24px;
+        position: fixed;
+        height: 100vh;
+    }
+
+    .main-content { margin-left: 320px; flex: 1; padding: 60px; }
+
+    /* UI Elements */
+    .btn-green {
+        background-color: var(--accent-green);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .btn-green:hover { background-color: #059669; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+
+    .search-bar {
+        background: #f1f5f9;
+        border: 1px solid transparent;
+        border-radius: 14px;
+        padding: 14px 20px;
+        width: 100%;
+        margin-bottom: 40px;
+        transition: all 0.2s;
+    }
+    .search-bar:focus { background: white; border-color: var(--primary-blue); outline: none; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.05); }
+
+    /* Activity Cards */
+    .activity-card {
+        background: white;
+        border: 1px solid #f1f5f9;
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        transition: all 0.3s ease;
+    }
+    .activity-card:hover { border-color: var(--accent-green); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+
+    .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 10px; }
+    .status-completed { background-color: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+    .status-pending { background-color: #cbd5e1; }
+
+    .completed-text { text-decoration: line-through; color: #94a3b8; }
+
+    h1, h2, h3 { color: var(--primary-blue); font-weight: 800; letter-spacing: -0.02em; }
+</style>
+
+<div class="app-wrapper">
+    <nav class="sidebar">
+        <h2 class="mb-5">Bucket.io</h2>
+
+        <div class="mb-5">
+            <label class="small fw-bold text-uppercase text-muted mb-3 d-block">Quick Add</label>
+            <form asp-action="Create" method="post">
+                <input type="text" name="ActivityName" class="form-control mb-3 border-0 shadow-sm" style="border-radius: 12px; padding: 12px;" placeholder="What is your goal?" required />
+                <button type="submit" class="btn btn-green w-100">Add Activity</button>
+            </form>
+        </div>
+
+        <div class="mt-auto">
+            <div class="p-3 bg-white rounded-4 border">
+                <p class="small m-0"><strong>Status:</strong> Productivity High</p>
+                <div class="progress mt-2" style="height: 6px;">
+                    <div class="progress-bar bg-success" style="width: 70%"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h1>Master List</h1>
+                <p class="text-muted">You have <strong>@Model.Count(x => !x.IsCompleted)</strong> pending adventures.</p>
+            </div>
+            <div class="d-flex gap-3">
+                <div class="p-3 text-center border rounded-4" style="min-width: 100px;">
+                    <span class="d-block h4 m-0 text-success">@Model.Count(x => x.IsCompleted)</span>
+                    <small class="text-muted">Done</small>
+                </div>
+            </div>
+        </header>
+
+        <input type="text" id="smartSearch" class="search-bar" placeholder="Search activities or categories...">
+
+        <div id="activityGrid">
+            @foreach (var item in Model)
+            {
+                <div class="activity-card item-row">
+                    <div class="d-flex align-items-center">
+                        <span class="status-dot @(item.IsCompleted ? "status-completed" : "status-pending")"></span>
+                        <div>
+                            <span class="fw-bold fs-5 activity-name @(item.IsCompleted ? "completed-text" : "")">@item.ActivityName</span>
+                            <div class="small text-muted">Created @item.DateCreated.ToString("MMM dd")</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <form asp-action="ToggleComplete" asp-route-id="@item.Id" method="post">
+                            <button class="btn btn-sm @(item.IsCompleted ? "btn-outline-secondary" : "btn-outline-success") rounded-pill px-3">
+                                @(item.IsCompleted ? "Undo" : "Complete")
+                            </button>
+                        </form>
+                        <form asp-action="Delete" asp-route-id="@item.Id" method="post">
+                            <button class="btn btn-sm btn-light text-danger rounded-pill px-3">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </main>
+</div>
+
+@section Scripts {
+    <script>
+        // Smooth Laptop Search
+        document.getElementById('smartSearch').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.item-row').forEach(row => {
+                const text = row.querySelector('.activity-name').innerText.toLowerCase();
+                row.style.opacity = text.includes(query) ? "1" : "0";
+                setTimeout(() => {
+                    row.style.display = text.includes(query) ? "flex" : "none";
+                }, 200);
+            });
+        });
+    </script>
+}
